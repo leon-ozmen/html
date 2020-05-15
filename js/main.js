@@ -1,7 +1,7 @@
 /* VARIABLES */
 
 /* DOM VARIABLES */
-
+var h1;
 var prevBtn;
 var slider;
 var nextBtn;
@@ -44,6 +44,7 @@ window.onload = function() {
 	
 	
 	// SET VARIABLES FOR FUNCTIONS
+	h1 = document.getElementById('ip');
 	slideWidth = slide.offsetWidth;
 	style = getComputedStyle(slide);
 	slideMargin = parseFloat(style.marginLeft);
@@ -60,6 +61,14 @@ window.onload = function() {
 	console.log(slides);
 	
 	
+	fetch("http://192.168.44.27:80/cgi-bin/ip.cgi")
+	.then(function(response) {
+	  return response.text();
+	}).then(function(data) {
+	  h1.innerHTML = "Dashboard " + data;
+	});
+
+
 	/* -----------------------INITIALIZE DOM EVENT LISTENER----------------------- */
 	for (var i = 0; i < slides.length; i++) {
 		slides[i].addEventListener('click', clickOnSlide);
@@ -78,7 +87,7 @@ window.onresize = function() {
 
 
 function refreshRequest() {
-	fetch("http://192.168.44.29:80/html/script.txt")
+	fetch("http://192.168.44.27:80/html/script.txt")
 	.then(function(response) {
 	  return response.text();
 	}).then(function(data) {

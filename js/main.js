@@ -251,7 +251,7 @@ window.onload = function() {
 	/* Requete lancé à l'initialisation
 
 	/* Requete permettant de récuperer l'adresse IP du noeud courant */
-	fetch("/ip.txt") // http://192.168.44.27:80/cgi-bin/ip.cgi
+	fetch("/cgi-bin/ip.cgi") // http://192.168.44.33:80/cgi-bin/ip.cgi
 	.then(function(response) {
 	  return response.text();
 	}).then(function(data) {
@@ -380,47 +380,37 @@ function syncSelector() {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
 function initCapteurLoad() {
-	fetch("script.txt") // http://192.168.44.17:80/api/allCap
+	fetch("/cgi-bin/data-api.cgi")
 		.then(function(response) {
 			return response.text();
 		}).then(function(data) {
+		data = data.replace(/'/g,'"');
 		data = JSON.parse(data);
-		//console.log(data);
 		loadCapteurs(data);
 		initSlides();
 	});
 
-	setTimeout(autoReload, 10000);
+	setTimeout(autoReload, 300000);
 }
 
 
 
 function autoReload() {
-	fetch("script.txt")
+	fetch("/cgi-bin/data-api.cgi")
 		.then(function(response) {
 			return response.text();
 		}).then(function(data) {
+			data = data.replace(/'/g,'"');
 			data = JSON.parse(data);
-			//console.log(data);
-			updateCapteurs(data);
+			loadCapteurs(data);
 			updateSlides();
-			//console.log(capteurs);
 	});
 
-	setTimeout(autoReload, 10000);
+	setTimeout(autoReload, 300000);
 }
+
+
 
 function initSlides() {
 	capteurs.forEach((capteur, index) => createSlide(index, capteur.capteurId, capteur.type, capteur.value, capteur.unit, capteur.icon));
@@ -484,51 +474,45 @@ function updateSlide(value, unit, index) {
 	document.getElementById("s" + index).children[2].innerText = value + " " + unit;;
 }
 
-function stringToObject(el) {
-	el = JSON.parse(el);
-}
 
 
 function loadCapteurs(el) {
 
 	for (let i=0; i < el.length; i++) {
-		for (const [key, value] of Object.entries(el[i])) {
-			if(key != "id"){
+
+		for (const [key, value] of Object.entries(el[i].values)) {
+			var found = capteurs.find(capteur =>
+				capteur.capteurId == el[i].id && capteur.key == key
+			);
+			if(!found){
+				
 				var newObject = {
 					capteurId: el[i].id,
 					key: key,
-					value: value,
-					values: [value],
-					times: [moment().format('DD/MM HH:mm')],
+					value: value[0],
+					values: value,
+					times: [moment(el[i].time, moment.defaultFormat).format('DD/MM/YYYY HH:mm')],
 					type: getType(key),
 					unit: getUnit(key),
 					icon: getIcon(key)
 				}
 				//console.log(newObject);
 				capteurs.push(newObject);
-			}
-		}
-	}
-}
-
-function updateCapteurs(el) {
-
-	for (let i=0; i < el.length; i++) {
-		for (const [key, value] of Object.entries(el[i])) {
-			if(key != "id"){
-
-				var oldCap = capteurs.find(function (oldCap) {
-					return oldCap.capteurId == el[i].id && oldCap.key == key;
-				});
-
-				oldCap.value = value;
-				oldCap.values.push(value);
-				oldCap.times.push(moment().format('DD/MM HH:mm'));
+			}else {
+				var currentTime = moment(el[i].time, moment.defaultFormat).format('DD/MM/YYYY HH:mm');
+				var foundTime = found.times.find(t =>
+					t == currentTime
+				);
+				if(!foundTime) {
+					found.value = value[0];
+					found.values.push(value[0]);
+					found.times.push(moment(el[i].time, moment.defaultFormat).format('DD/MM/YYYY HH:mm'));
+				}
 
 			}
 		}
 	}
-	myChart.update();
+	console.log(capteurs);
 }
 
 function createChart(capteur) {
